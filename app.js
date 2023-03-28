@@ -1,37 +1,87 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const date = require(__dirname + "/date.js");
-
+const mongoose = require("mongoose");
+main().catch(err=> console.log(err));
 
 const app = express();
-let items=["Play", "Eat","Code"];
-let workItems = [];
+app.set('view engine', 'ejs');
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-app.set('view engine', 'ejs');
+async function main(){
+    await mongoose.connect("mongodb://127.0.0.1/todolistDB");
+    console.log("connected");
 
-app.get("/", function(request, response){
+    const itemsSchema = new mongoose.Schema({
+        name: String
+    });
 
-    let day = date.getDate();
+    const Item = mongoose.model("Item", itemsSchema);
 
-    response.render("list", {ListTitle: day, newListItems: items});
-});
+    const item1 = new Item({
+        name: "welcome to your todolist!"
+    });
 
-app.post("/" , function(request,response){
-    let item = request.body.newItem;
-    if (request.body.list === "Work"){
-        workItems.push(item);
-        response.redirect("/work");
-    }else{
-        items.push(item);
-        response.redirect("/");
+    const item2 = new Item({
+        name: "hit the + button!"
+    });
 
-    }
+    const item3 = new Item({
+        name: "hit it"
+    });
+
+    const defaultItems = [item1,item2,item3];
+
+  
+
+    app.get("/", function(request, response){
+
     
-    
+   
+    Item.find({})
+    .then(function(foundItems){
+        if(foundItems.length === 0){
+            return Item.insertMany(defaultItems);
+        }else{
+           return foundItems; 
+        }
+    })      
+         .then(function(foundItems){
+            response.render("list", {ListTitle: "Today", newListItems: foundItems});
+         
+        }) 
+         .catch(function(err){
+          console.log(err);
+        
+        });
+
+
+        app.post("/" , function(request,response){
+            let itemName = request.body.newItem;
+        
+            const item = new Item({
+                name: itemName
+            });
+        
+            item.save();
+            response.redirect("/");
+            
+            
+            
+        
+        }); 
+        
+
 
 });
+};
+
+
+
+
+
+
 
 app.get("/work" , function(request,response){
     response.render("list", {ListTitle:"Work List", newListItems: workItems});
