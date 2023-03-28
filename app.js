@@ -59,7 +59,6 @@ async function main(){
 
         app.post("/" , function(request,response){
             let itemName = request.body.newItem;
-        
             const item = new Item({
                 name: itemName
             });
@@ -71,8 +70,20 @@ async function main(){
             
         
         }); 
-        
+          
+        app.post('/delete', async (req, res) => {
 
+            const checkedItem = req.body.checkbox;
+            
+            const data = await Item.findByIdAndRemove(checkedItem);
+            
+            if(data){
+            
+              res.redirect('/');
+            
+            }
+            
+            });
 
 });
 };
