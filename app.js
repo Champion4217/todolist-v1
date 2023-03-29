@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const _ = require("lodash");
 const mongoose = require("mongoose");
 main().catch(err=> console.log(err));
 
@@ -64,7 +65,7 @@ async function main(){
         });
 
         app.get("/:customListName", function(request,response){
-           const customListName = request.params.customListName;
+           const customListName = _.capitalize(request.params.customListName);
 
            List.findOne({name:customListName})
            .then(function(foundList){
@@ -98,13 +99,25 @@ async function main(){
 
         app.post("/" , function(request,response){
             let itemName = request.body.newItem;
+            let listName= request.body.list;
             const item = new Item({
                 name: itemName
             });
+
+
+            if (listName === "Today"){
+                item.save();
+                response.redirect("/");    
+            }else {
+                List.findOne({name: listName})
+                .then(function(foundList){
+                    foundList.items.push(item);
+                    foundList.save();
+                    response.redirect("/" + listName);
+                });
+            }
         
-            item.save();
-            response.redirect("/");
-            
+           
             
             
         
@@ -112,15 +125,33 @@ async function main(){
           
         app.post('/delete', async (req, res) => {
 
-            const checkedItem = req.body.checkbox;
-            
-            const data = await Item.findByIdAndRemove(checkedItem);
-            
-            if(data){
-            
-              res.redirect('/');
-            
-            }
+            const checkedItemId = req.body.checkbox;
+            const listName = req.body.listName;
+            if (listName === "Today") {
+                Item.findByIdAndRemove(checkedItemId)
+                .then(() =>{
+                  console.log("We have removed the item with id: " + checkedItemId);
+                  res.redirect("/");
+                })
+                .catch(err => {
+                  console.log(err);
+                });
+              } else {
+                List.findOne({ name: listName })
+                  .then((foundList) => {
+                    if (foundList) {
+                      foundList.items.pull({ _id: checkedItemId });
+                      return foundList.save();
+                    }
+                  })
+                  .then(() => {
+                    console.log("We have removed the item with id: " + checkedItemId + " from " + listName + " list");
+                    res.redirect("/" + listName);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                  });
+              }
             
             });
 
