@@ -33,6 +33,13 @@ async function main(){
 
     const defaultItems = [item1,item2,item3];
 
+    const listSchema = {
+        name: String,
+        items: [itemsSchema]
+    };
+
+
+    const List = mongoose.model("List", listSchema);
   
 
     app.get("/", function(request, response){
@@ -55,6 +62,38 @@ async function main(){
           console.log(err);
         
         });
+
+        app.get("/:customListName", function(request,response){
+           const customListName = request.params.customListName;
+
+           List.findOne({name:customListName})
+           .then(function(foundList){
+            if(foundList===null){
+                const list = new List({
+                    name: customListName,
+                    items: defaultItems
+                   });
+        
+                   list.save();
+                   response.redirect("/"+ customListName);
+                
+                
+                } else{
+                    response.render("list", {ListTitle: foundList.name, newListItems: foundList.items});
+                }
+            
+             });
+
+            
+
+
+
+
+        });
+
+            
+
+          
 
 
         app.post("/" , function(request,response){
@@ -91,12 +130,6 @@ async function main(){
 
 
 
-
-
-
-app.get("/work" , function(request,response){
-    response.render("list", {ListTitle:"Work List", newListItems: workItems});
-});
 
 
 
