@@ -63,6 +63,7 @@ async function main(){
           console.log(err);
         
         });
+    })
 
         app.get("/:customListName", function(request,response){
            const customListName = _.capitalize(request.params.customListName);
@@ -155,7 +156,7 @@ async function main(){
             
             });
 
-});
+
 };
 
 
